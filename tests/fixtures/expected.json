@@ -1,0 +1,230 @@
+{
+  "rules": {
+    "repeat_call": {
+      "max_identical_repeat": 2,
+      "severity": "error"
+    },
+    "arg_jitter_loop": {
+      "runs": 4,
+      "arg_similarity": 0.7,
+      "severity": "error"
+    },
+    "silent_tool_failure": {
+      "side_effect_tools": [
+        "refund_order",
+        "transfer_money",
+        "delete_record",
+        "send_email"
+      ],
+      "severity": "error"
+    },
+    "context_bloat": {
+      "growth_factor": 3,
+      "min_steps": 4,
+      "severity": "warn"
+    },
+    "step_explosion": {
+      "max_steps": 15,
+      "severity": "warn"
+    },
+    "parallel_fanout": {
+      "max_parallel_calls": 3,
+      "severity": "info"
+    },
+    "redundant_parallel_call": {
+      "severity": "warn"
+    },
+    "truncated_arguments": {
+      "severity": "error"
+    }
+  },
+  "fixtures": {
+    "01_repeat_loop": {
+      "record_count": 7,
+      "metrics": {
+        "steps": 4,
+        "calls": 3,
+        "tool_calls_by_name": {
+          "get_order": 3
+        },
+        "error_results": 0,
+        "total_prompt_tokens": 3850,
+        "total_completion_tokens": 173
+      },
+      "anomalies": [
+        {
+          "rule": "repeat_call",
+          "severity": "error"
+        }
+      ],
+      "anomaly_detail": [
+        {
+          "rule": "repeat_call",
+          "severity": "error",
+          "message": "工具 get_order 连续 3 次以完全相同的参数调用（无进展循环）",
+          "call_index": 0,
+          "call_count": 3,
+          "tool": "get_order",
+          "indices": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    "02_arg_jitter_loop": {
+      "record_count": 9,
+      "metrics": {
+        "steps": 5,
+        "calls": 4,
+        "tool_calls_by_name": {
+          "get_order": 4
+        },
+        "error_results": 0,
+        "total_prompt_tokens": 4230,
+        "total_completion_tokens": 188
+      },
+      "anomalies": [
+        {
+          "rule": "arg_jitter_loop",
+          "severity": "error"
+        }
+      ],
+      "anomaly_detail": [
+        {
+          "rule": "arg_jitter_loop",
+          "severity": "error",
+          "message": "工具 get_order 连续 4 次调用的参数只有细微差别（疑似改写参数反复重试）",
+          "call_index": 0,
+          "call_count": 4,
+          "tool": "get_order",
+          "indices": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    "03_silent_failure": {
+      "record_count": 3,
+      "metrics": {
+        "steps": 2,
+        "calls": 1,
+        "tool_calls_by_name": {
+          "check_refund_policy": 1
+        },
+        "error_results": 1,
+        "total_prompt_tokens": 1320,
+        "total_completion_tokens": 65
+      },
+      "anomalies": [
+        {
+          "rule": "silent_tool_failure",
+          "severity": "error"
+        }
+      ],
+      "anomaly_detail": [
+        {
+          "rule": "silent_tool_failure",
+          "severity": "error",
+          "message": "工具 check_refund_policy 返回失败（upstream timeout）后既未重试也未告知用户",
+          "call_index": 0,
+          "step": 0,
+          "tool": "check_refund_policy",
+          "is_side_effect": false
+        }
+      ]
+    },
+    "04_context_bloat": {
+      "record_count": 33,
+      "metrics": {
+        "steps": 17,
+        "calls": 16,
+        "tool_calls_by_name": {
+          "search_policy": 6,
+          "get_order": 5,
+          "check_refund_policy": 5
+        },
+        "error_results": 0,
+        "total_prompt_tokens": 1574819,
+        "total_completion_tokens": 665
+      },
+      "anomalies": [
+        {
+          "rule": "context_bloat",
+          "severity": "warn"
+        },
+        {
+          "rule": "step_explosion",
+          "severity": "warn"
+        }
+      ],
+      "anomaly_detail": [
+        {
+          "rule": "context_bloat",
+          "severity": "warn",
+          "message": "prompt_tokens 从第 0 步的 800 增长到第 16 步的 525473（656.8x）",
+          "step": 0,
+          "end_step": 16,
+          "start_tokens": 800,
+          "end_tokens": 525473,
+          "growth": 656.84
+        },
+        {
+          "rule": "step_explosion",
+          "severity": "warn",
+          "message": "轨迹共 17 步，超过阈值 15",
+          "step_count": 17
+        }
+      ]
+    },
+    "05_healthy": {
+      "record_count": 6,
+      "metrics": {
+        "steps": 3,
+        "calls": 3,
+        "tool_calls_by_name": {
+          "get_order": 1,
+          "check_refund_policy": 1,
+          "refund_order": 1
+        },
+        "error_results": 0,
+        "total_prompt_tokens": 1860,
+        "total_completion_tokens": 130
+      },
+      "anomalies": [],
+      "anomaly_detail": []
+    }
+  },
+  "diff_cases": [
+    {
+      "name": "healthy_vs_repeat",
+      "base": "05_healthy",
+      "candidate": "01_repeat_loop",
+      "divergence": {
+        "index": 1,
+        "a": "check_refund_policy|{\"order_id\":\"A100\"}",
+        "b": "get_order|{\"order_id\":\"A100\"}"
+      }
+    },
+    {
+      "name": "bloat_vs_healthy",
+      "base": "04_context_bloat",
+      "candidate": "05_healthy",
+      "divergence": {
+        "index": 0,
+        "a": "search_policy|{\"order_id\":\"A100\",\"query\":\"issue 0\"}",
+        "b": "get_order|{\"order_id\":\"A100\"}"
+      }
+    },
+    {
+      "name": "self_vs_self",
+      "base": "05_healthy",
+      "candidate": "05_healthy",
+      "divergence": null
+    }
+  ]
+}
