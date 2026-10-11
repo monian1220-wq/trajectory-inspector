@@ -1,0 +1,73 @@
+# 规则阈值配置
+#
+# ★ 这些默认值不是随手写的，是拿 tests/fixtures/ 里 5 条真实轨迹调出来的。
+#   改任何阈值之后请跑一次：python -m pytest
+#   特别注意 tests/test_fixtures.py 里那条"健康轨迹必须零告警"的用例 ——
+#   它就是为了防止你把阈值调松到"什么都报"。
+
+repeat_call:
+  enabled: true
+  # 连续多少次"工具+参数完全相同"算循环（2 = 第二次出现就算）
+  max_identical_repeat: 2
+  severity: error
+
+arg_jitter_loop:
+  enabled: true
+  # 连续多少次"参数只有细微差别"算循环
+  runs: 4
+  # 相似度阈值。注意短字符串很敏感：
+  #   "A100" vs "A-100" 的编辑距离相似度只有 0.75
+  # 所以阈值不能设太高，否则会漏掉这种最常见的微扰。
+  arg_similarity: 0.7
+  severity: error
+
+silent_tool_failure:
+  enabled: true
+  # 这些工具一旦失败后被静默忽略，直接升级为 critical
+  side_effect_tools:
+    - refund_order
+    - transfer_money
+    - delete_record
+    - send_email
+  severity: error
+
+context_bloat:
+  enabled: true
+  # 一段 >= min_steps 的窗口里，prompt_tokens 首尾比值超过这个数就告警
+  # 设成 3.0 的理由：正常轨迹 3~4 步涨 20%~40% 是健康的；
+  # 而指数增长（每步 1.5x）在 4 步里就涨 5 倍以上，两者差距很大，容易区分。
+  growth_factor: 3.0
+  min_steps: 4
+  severity: warn
+
+step_explosion:
+  enabled: true
+  max_steps: 15
+  severity: warn
+
+parallel_fanout:
+  enabled: true
+  max_parallel_calls: 3
+  severity: info
+
+redundant_parallel_call:
+  enabled: true
+  severity: warn
+
+truncated_arguments:
+  enabled: true
+  severity: error
+
+# 判断"Agent 是否告知用户失败了"的关键词
+silent_keywords:
+  - sorry
+  - failed
+  - error
+  - unable
+  - retry
+  - timeout
+  - 抱歉
+  - 失败
+  - 错误
+  - 重试
+  - 超时
