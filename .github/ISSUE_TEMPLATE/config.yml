@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 想聊聊 Agent 可观测性 / 评估
+    url: https://github.com/monian1220-wq/trajectory-inspector/discussions
+    about: 不是 bug，只是想讨论设计取舍、或者想问怎么做轨迹检查，欢迎开 Discussion

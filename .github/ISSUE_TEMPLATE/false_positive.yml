@@ -1,0 +1,53 @@
+name: 误报（把正常轨迹报成了异常）
+description: 检测规则在健康轨迹上触发了告警
+title: "[误报] "
+labels: ["false-positive"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **这类反馈比 Bug 报告更有价值。**
+
+        原因：检测工具最大的失败不是漏报，而是误报 ——
+        如果正常轨迹也被报一堆问题，用户两天之内就会把整个工具关掉。
+        所以"健康轨迹零告警"是这个项目的第一条测试底线
+        （见 `tests/test_fixtures.py::test_healthy_trajectory_has_no_anomalies`）。
+
+  - type: input
+    id: rule
+    attributes:
+      label: 触发的规则名
+      description: 输出里的 `rule` 字段，例如 repeat_call / context_bloat
+      placeholder: context_bloat
+    validations:
+      required: true
+
+  - type: textarea
+    id: trajectory
+    attributes:
+      label: 轨迹片段（请脱敏）
+      description: |
+        尽量贴上被误判的那几步。如果方便，说明这条轨迹在业务上是"正常"的理由。
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: why-normal
+    attributes:
+      label: 为什么你认为这是正常的
+      description: |
+        这一点很关键。比如："这个工具本来就需要连续调用两次，
+        第一次拿 id 第二次拿详情，不是无进展循环。"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: suggestion
+    attributes:
+      label: 你倾向的修法
+      options:
+        - 调高这条规则的阈值
+        - 这条规则应该默认关闭，需要的人自己开
+        - 判定逻辑有问题，需要改判断方式
+        - 说不准，交给维护者判断

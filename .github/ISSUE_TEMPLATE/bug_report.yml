@@ -1,0 +1,70 @@
+name: Bug 报告
+description: 报告一个检测错误、崩溃或输出问题
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        谢谢帮忙！为了让问题能被快速定位，请尽量把下面几项填完整。
+        **尤其是"最小复现的轨迹片段"——没有它，我基本只能靠猜。**
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 发生了什么
+      description: 你期望看到什么？实际看到了什么？
+      placeholder: |
+        期望：这条轨迹应该被检出 repeat_call
+        实际：没有报任何异常（退出码 0）
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现方式
+      description: |
+        贴出你运行的命令，以及最小的轨迹片段（JSONL 几行就够）。
+        ★ 请删掉里面的真实数据、密钥、用户信息。
+      render: shell
+      placeholder: |
+        $ python -m trajectory_inspector check my_trace.jsonl
+
+        # my_trace.jsonl 的关键几行：
+        {"type":"llm_response","step":0,...}
+        {"type":"tool_result","call_id":"c1",...}
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: 完整输出
+      description: 报错的话请贴完整 traceback，不要只写"报错了"。
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      description: 项目版本或你 clone 的 commit
+      placeholder: v0.1.0 或 commit 短哈希
+
+  - type: input
+    id: env
+    attributes:
+      label: 环境
+      placeholder: Windows 11 / Python 3.12.10
+
+  - type: dropdown
+    id: trajectory-format
+    attributes:
+      label: 轨迹格式
+      options:
+        - OpenAI 风格（message.tool_calls）
+        - Anthropic 风格（content 里的 tool_use block）
+        - 其它（请在上面说明，可能需要新增适配器）
+        - 不确定
