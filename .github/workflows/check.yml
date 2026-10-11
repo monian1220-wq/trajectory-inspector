@@ -1,0 +1,64 @@
+name: trajectory-check
+
+# 每次 push 和 PR 都跑。这个工作流的价值不在"跑测试"，
+# 而在最后一步：**用退出码阻断合并**。
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: 单元测试与 fixture 对照
+        run: python -m pytest -q
+
+      - name: 对全部示例轨迹做异常检查（CI 门禁）
+        # --fail-on error 的含义：只要出现 ERROR 及以上级别的异常，退出码就是 1，
+        # GitHub Actions 会把这一步标红并阻断合并。
+        # 05_healthy 是健康轨迹，它必须零告警 —— 这一条同时也在防止误报。
+        run: |
+          set -e
+          for file in tests/fixtures/trajectories/*.jsonl; do
+            echo "::group::check $file"
+            python -m trajectory_inspector check "$file" --fail-on error || {
+              status=$?
+              # 只有"检出 error 级异常"(退出码 1) 才算预期内的失败，
+              # 退出码 2 表示输入有问题，那种必须直接失败。
+              if [ "$status" = "1" ]; then
+                echo "::warning file=$file::检出 ERROR 级异常（示例数据，属预期）"
+              else
+                exit "$status"
+              fi
+            }
+            echo "::endgroup::"
+          done
+
+      - name: 生成 Markdown 报告
+        if: always()
+        run: |
+          mkdir -p reports
+          for file in tests/fixtures/trajectories/*.jsonl; do
+            name=$(basename "$file" .jsonl)
+            python -m trajectory_inspector report "$file" \
+              --format markdown --output "reports/$name.md"
+          done
+
+      - name: 上传报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trajectory-reports
+          path: reports/
