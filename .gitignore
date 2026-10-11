@@ -1,0 +1,41 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# --- virtualenv ---
+.venv/
+venv/
+env/
+
+# --- test & coverage ---
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- temp dirs used by tests in restricted environments ---
+.tmp/
+.tmptest/
+
+# --- tool caches ---
+.ruff_cache/
+.mypy_cache/
+
+# --- generated reports (CI uploads them as artifacts instead) ---
+reports/*.md
+reports/*.json
+!reports/.gitkeep
+
+# --- secrets ---
+.env
+.env.*
+!.env.example
+
+# --- editors ---
+.vscode/
+.idea/
+*.swp
+.DS_Store

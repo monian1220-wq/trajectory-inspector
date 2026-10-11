@@ -1,0 +1,22 @@
+# 统一编辑器配置：让不同人、不同编辑器写出来的文件格式一致。
+# 没有这个文件，Windows 用户会提交 CRLF、有人会用 Tab、文件末尾会缺换行 ——
+# 这些都会变成毫无意义的 diff 噪音。
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[*.{js,md}]
+indent_size = 2
+
+[*.md]
+# Markdown 里行尾的两个空格是有意义的（表示换行），不要自动删掉
+trim_trailing_whitespace = false
